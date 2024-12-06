@@ -39,27 +39,23 @@ public class Main {
                 case 3 -> {
                     System.out.print("ID da tarefa para atualizar: ");
                     int id = scanner.nextInt();
-                    scanner.nextLine();  // Limpar o buffer
+                    scanner.nextLine();  
 
-                    // Verificando se o ID da tarefa existe
                     Tarefa tarefaExistente = tarefaServico.buscarTarefaPorId(id);
                     if (tarefaExistente == null) {
                         System.out.println("Tarefa não cadastrada, tente novamente.");
-                        break; // Interrompe o case e retorna ao menu
+                        break; 
                     }
 
                     System.out.print("Nova descrição: ");
                     String nome = scanner.nextLine();
 
-                    // Exibindo a opção para o status de conclusão
                     System.out.print("Está concluída? ");
                     System.out.println("1 - Sim, 2 - Não");
                     int concluidoInput = scanner.nextInt();
 
-                    // Convertendo a entrada 1 ou 2 para boolean
                     boolean concluido = (concluidoInput == 1); // 1 -> true, 2 -> false
 
-                    // Atualizando a tarefa
                     boolean atualizado = tarefaServico.atualizarTarefa(id, nome, concluido);
 
                     if (atualizado) {
@@ -87,8 +83,5 @@ public class Main {
 
         }
         scanner.close();
-
-
-
     }
 }
