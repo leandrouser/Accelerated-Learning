@@ -24,7 +24,7 @@ public class TarefaServico {
     public Tarefa buscarTarefaPorId(int id) {
         for (Tarefa tarefa : listTarefa()) {
             if (tarefa.getId() == id) {
-                return tarefa;  // Retorna a tarefa encontrada
+                return tarefa;  
             }
         }
         return null;
