@@ -34,10 +34,16 @@ public class Vendas {
     @Column(name = "desconto_total", precision = 10, scale = 2, nullable = false)
     private BigDecimal descontoTotal;
 
+    @Column(name = "subTotal", precision = 10, scale = 2, nullable = false)
+    private BigDecimal subTotal;
+
     @Column(name = "valor", precision = 10, scale = 2, nullable = false)
     private BigDecimal valor;
 
+    @Column(nullable = false, length = 10)
+    private String pagamento;
+
     @Column(nullable = false)
-    private String status;
+    private int quantidade;
 
 }

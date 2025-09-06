@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Itens_venda")
+@Table(name = "itens_vendas")
 public class ItensVendas {
 
     @Id
@@ -30,7 +30,7 @@ public class ItensVendas {
     private Integer quantidade;
 
     @Column(name = "valor", precision = 10, scale = 2, nullable = false)
-    private BigDecimal valor;
+    private BigDecimal subTotal;
 
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal desconto;

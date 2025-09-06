@@ -29,7 +29,7 @@ public class BordadoServico {
     }
 
     @Transactional
-    public BordadoResponseDTO criarBordado(BordadoRequestDTO dto) {
+    public BordadoResponseDTO salvarOuAtualizarComArquivo(Long id, BordadoRequestDTO dto, MultipartFile file) {
         Pessoas cliente = pessoaRepositorio.findById(dto.getCliente_id())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
@@ -37,63 +37,67 @@ public class BordadoServico {
             throw new IllegalArgumentException("A pessoa selecionada deve ser do tipo CLIENTE");
         }
 
-        Bordados bordados = new Bordados();
-        bordados.setCliente(cliente);
-        bordados.setDataCadastro(LocalDate.now());
-        bordados.setDataEntrega(dto.getDataEntrega());
-        bordados.setValor(dto.getValor() != null ? dto.getValor() : BigDecimal.ZERO);
-        bordados.setDescricao(dto.getDescricao());
-        bordados.setArquivo(dto.getArquivo());
-        bordados.setNomeArquivo(dto.getNomeArquivo());
+        Bordados bordado;
 
-        Bordados salvo = bordadoRepositorio.save(bordados);
+        if (id != null) {
+            // Atualização
+            bordado = bordadoRepositorio.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Bordado não encontrado"));
+            bordado.setCliente(cliente);
+            bordado.setDataEntrega(dto.getDataEntrega());
+            bordado.setValor(dto.getValor() != null ? dto.getValor() : BigDecimal.ZERO);
+            bordado.setDescricao(dto.getDescricao());
+
+            if (file != null && !file.isEmpty()) {
+                try {
+                    bordado.setArquivo(file.getBytes());
+                    bordado.setNomeArquivo(file.getOriginalFilename());
+                } catch (IOException e) {
+                    throw new RuntimeException("Erro ao processar arquivo", e);
+                }
+            }
+
+        } else {
+            // Criação
+            bordado = new Bordados();
+            bordado.setCliente(cliente);
+            bordado.setDataCadastro(LocalDate.now());
+            bordado.setDataEntrega(dto.getDataEntrega());
+            bordado.setValor(dto.getValor() != null ? dto.getValor() : BigDecimal.ZERO);
+            bordado.setDescricao(dto.getDescricao());
+
+            if (file != null && !file.isEmpty()) {
+                try {
+                    bordado.setArquivo(file.getBytes());
+                    bordado.setNomeArquivo(file.getOriginalFilename());
+                } catch (IOException e) {
+                    throw new RuntimeException("Erro ao processar arquivo", e);
+                }
+            }
+        }
+
+        Bordados salvo = bordadoRepositorio.save(bordado);
         return toResponseDTO(salvo);
     }
 
-    @Transactional
-    public BordadoResponseDTO atualizarBordado(Long id, BordadoRequestDTO dto) {
-        Bordados bordados = bordadoRepositorio.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Bodado não encontrado"));
-
-        Pessoas pessoas = pessoaRepositorio.findById(dto.getCliente_id())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
-
-        if (pessoas.getTipo() != TipoPessoa.CLIENTE){
-            throw new IllegalArgumentException("A pessoa seclecionada deve ser do tipo CLIENTE");
-
-        }
-
-        bordados.setCliente(pessoas);
-        bordados.setDataEntrega(dto.getDataEntrega());
-        bordados.setValor(dto.getValor());
-        bordados.setDescricao(dto.getDescricao());
-
-        Bordados atualizado = bordadoRepositorio.save(bordados);
-        return toResponseDTO(atualizado);
+    public List<BordadoResponseDTO> listarBordados() {
+        return bordadoRepositorio.findAll()
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
-        public List<BordadoResponseDTO> listarBordados(){
-            return bordadoRepositorio.findAll()
-                    .stream()
-                    .map(this::toResponseDTO)
-                    .collect(Collectors.toList());
-
-
-        }
-
-    public BordadoResponseDTO buscarPorId(Long id){
+    public BordadoResponseDTO buscarPorId(Long id) {
         Bordados bordado = bordadoRepositorio.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Bordado não encontrado"));
         return toResponseDTO(bordado);
     }
 
-    public Bordados buscarEntidadePorId(Long id) {
-        return bordadoRepositorio.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Bordado não encontrado"));
-    }
-
     @Transactional
-    public BordadoResponseDTO salvarComArquivo(BordadoRequestDTO dto, MultipartFile file) {
+    public BordadoResponseDTO atualizarComArquivo(Long id, BordadoRequestDTO dto, MultipartFile file) {
+        Bordados bordados = bordadoRepositorio.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bordado não encontrado"));
+
         Pessoas cliente = pessoaRepositorio.findById(dto.getCliente_id())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
@@ -101,38 +105,34 @@ public class BordadoServico {
             throw new IllegalArgumentException("A pessoa selecionada deve ser do tipo CLIENTE");
         }
 
-        Bordados bordados = new Bordados();
         bordados.setCliente(cliente);
-        bordados.setDataCadastro(LocalDate.now());
         bordados.setDataEntrega(dto.getDataEntrega());
-        bordados.setValor(dto.getValor() != null ? dto.getValor() : BigDecimal.ZERO);
+        bordados.setValor(dto.getValor());
         bordados.setDescricao(dto.getDescricao());
 
         try {
             if (file != null && !file.isEmpty()) {
                 bordados.setArquivo(file.getBytes());
                 bordados.setNomeArquivo(file.getOriginalFilename());
-                bordados.setTipoArquivo(file.getContentType());
             }
         } catch (IOException e) {
             throw new RuntimeException("Erro ao processar arquivo", e);
         }
 
-        Bordados salvo = bordadoRepositorio.save(bordados);
-        return toResponseDTO(salvo);
+        Bordados atualizado = bordadoRepositorio.save(bordados);
+        return toResponseDTO(atualizado);
     }
 
 
-    private BordadoResponseDTO toResponseDTO(Bordados bordados) {
+    private BordadoResponseDTO toResponseDTO(Bordados bordado) {
         BordadoResponseDTO dto = new BordadoResponseDTO();
-        dto.setId(bordados.getId());
-        dto.setDataCadastro(bordados.getDataCadastro());
-        dto.setDataEntrega(bordados.getDataEntrega());
-        dto.setValor(bordados.getValor());
-        dto.setDescricao(bordados.getDescricao());
-        dto.setClienteNome(bordados.getCliente().getNome());
-        dto.setNomeArquivo(bordados.getNomeArquivo());
+        dto.setId(bordado.getId());
+        dto.setDataCadastro(bordado.getDataCadastro());
+        dto.setDataEntrega(bordado.getDataEntrega());
+        dto.setValor(bordado.getValor());
+        dto.setDescricao(bordado.getDescricao());
+        dto.setClienteNome(bordado.getCliente().getNome());
+        dto.setNomeArquivo(bordado.getNomeArquivo());
         return dto;
     }
-
 }

@@ -9,9 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/produto")
+@RequestMapping("/produtos")
 public class ProdutoControle {
-
 
     private final ProdutoServico produtoServico;
 
@@ -20,26 +19,33 @@ public class ProdutoControle {
     }
 
     @PostMapping
-    public ResponseEntity<ProdutoResponseDTO> criarProduto(@RequestBody ProdutoRequestDTO requestDTO){
-        ProdutoResponseDTO produtoResponseDTO = produtoServico.criarProduto(requestDTO);
-        return ResponseEntity.ok(produtoResponseDTO);
+    public ResponseEntity<ProdutoResponseDTO> criarProduto(@RequestBody ProdutoRequestDTO dto) {
+        ProdutoResponseDTO salvo = produtoServico.criarProduto(dto);
+        return ResponseEntity.ok(salvo);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProdutoResponseDTO> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequestDTO requestDTO){
-
-        ProdutoResponseDTO produtoResponseDTO = produtoServico.atualizarProduto(id, requestDTO);
-        return ResponseEntity.ok(produtoResponseDTO);
-
+    public ResponseEntity<ProdutoResponseDTO> atualizarProduto(
+            @PathVariable Long id,
+            @RequestBody ProdutoRequestDTO requestDTO) {
+        ProdutoResponseDTO atualizado = produtoServico.atualizarProduto(id, requestDTO);
+        return ResponseEntity.ok(atualizado);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ProdutoResponseDTO>> buscarProdutosPorTermo(
             @RequestParam("term") String term,
-            @RequestParam(defaultValue = "0") int page,       // ← NOVO
-            @RequestParam(defaultValue = "50") int size) {    // ← NOVO
-
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         List<ProdutoResponseDTO> produtos = produtoServico.buscarProdutosPorTermo(term, page, size);
+        return ResponseEntity.ok(produtos);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProdutoResponseDTO>> listarProdutos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        List<ProdutoResponseDTO> produtos = produtoServico.listarTodosProdutos(page, size);
         return ResponseEntity.ok(produtos);
     }
 }
