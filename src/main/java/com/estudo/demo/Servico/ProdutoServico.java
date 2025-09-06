@@ -6,7 +6,6 @@ import com.estudo.demo.model.Categorias;
 import com.estudo.demo.model.Produtos;
 import com.estudo.demo.repositorio.CategoriaRepositorio;
 import com.estudo.demo.repositorio.ProdutoRepositorio;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -70,6 +69,22 @@ public class ProdutoServico {
         return produtos.getContent().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ProdutoResponseDTO> listarTodosProdutos(int page, int size) {
+        return produtoRepositorio.findAll(PageRequest.of(page, size))
+                .stream()
+                .map(produto -> new ProdutoResponseDTO(
+                        produto.getId(),
+                        produto.getCodigoBarras(),
+                        produto.getNome(),
+                        produto.getDescricao(),
+                        produto.getPreco(),
+                        produto.getCategorias().getNome(),
+                        produto.getEstoque()
+
+                ))
+                .toList();
     }
 
     private ProdutoResponseDTO toDTO(Produtos produtos) {
