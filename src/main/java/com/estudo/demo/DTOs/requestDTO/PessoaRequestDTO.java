@@ -1,4 +1,4 @@
-package com.estudo.demo.DTOs;
+package com.estudo.demo.DTOs.requestDTO;
 
 import com.estudo.demo.enums.TipoPessoa;
 import lombok.AllArgsConstructor;

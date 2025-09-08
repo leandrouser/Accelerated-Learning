@@ -1,7 +1,7 @@
 package com.estudo.demo.Servico;
 
-import com.estudo.demo.DTOs.ProdutoRequestDTO;
-import com.estudo.demo.DTOs.ProdutoResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.ProdutoRequestDTO;
+import com.estudo.demo.DTOs.response.ProdutoResponseDTO;
 import com.estudo.demo.model.Categorias;
 import com.estudo.demo.model.Produtos;
 import com.estudo.demo.repositorio.CategoriaRepositorio;

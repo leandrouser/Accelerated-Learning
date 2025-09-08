@@ -1,7 +1,7 @@
 package com.estudo.demo.controle;
 
-import com.estudo.demo.DTOs.BordadoRequestDTO;
-import com.estudo.demo.DTOs.BordadoResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.BordadoRequestDTO;
+import com.estudo.demo.DTOs.response.BordadoResponseDTO;
 import com.estudo.demo.Servico.BordadoServico;
 import com.estudo.demo.model.Bordados;
 import com.estudo.demo.repositorio.BordadoRepositorio;
@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/bordados")
+@RequestMapping("/api/bordados")
 public class BordadoControle {
 
     private final BordadoServico bordadoServico;

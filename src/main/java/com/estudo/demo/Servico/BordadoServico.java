@@ -1,7 +1,7 @@
 package com.estudo.demo.Servico;
 
-import com.estudo.demo.DTOs.BordadoRequestDTO;
-import com.estudo.demo.DTOs.BordadoResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.BordadoRequestDTO;
+import com.estudo.demo.DTOs.response.BordadoResponseDTO;
 import com.estudo.demo.enums.TipoPessoa;
 import com.estudo.demo.model.Bordados;
 import com.estudo.demo.model.Pessoas;

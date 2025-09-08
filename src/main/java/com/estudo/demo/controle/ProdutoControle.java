@@ -1,7 +1,7 @@
 package com.estudo.demo.controle;
 
-import com.estudo.demo.DTOs.ProdutoRequestDTO;
-import com.estudo.demo.DTOs.ProdutoResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.ProdutoRequestDTO;
+import com.estudo.demo.DTOs.response.ProdutoResponseDTO;
 import com.estudo.demo.Servico.ProdutoServico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/produtos")
+@RequestMapping("/api/produtos")
 public class ProdutoControle {
 
     private final ProdutoServico produtoServico;

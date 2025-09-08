@@ -1,15 +1,13 @@
-package com.estudo.demo.DTOs;
+package com.estudo.demo.DTOs.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class CategoriaRequestDTO {
+@AllArgsConstructor
+public class CategoriaResponseDTO {
 
-    private Long id;
     private String nome;
-
 }

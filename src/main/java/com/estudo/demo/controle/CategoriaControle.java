@@ -1,13 +1,13 @@
 package com.estudo.demo.controle;
 
-import com.estudo.demo.DTOs.CategoriaRequestDTO;
-import com.estudo.demo.DTOs.CategoriaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.CategoriaRequestDTO;
+import com.estudo.demo.DTOs.response.CategoriaResponseDTO;
 import com.estudo.demo.Servico.CategoriaServico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/categorias")
+@RequestMapping("/api/categorias")
 public class CategoriaControle {
 
     private final CategoriaServico categoriaServico;

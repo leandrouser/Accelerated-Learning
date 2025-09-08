@@ -1,6 +1,6 @@
 package com.estudo.demo.execoes;
 
-import com.estudo.demo.DTOs.ErrorResponseDTO;
+import com.estudo.demo.DTOs.response.ErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;

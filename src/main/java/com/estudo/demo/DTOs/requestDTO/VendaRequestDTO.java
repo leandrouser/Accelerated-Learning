@@ -1,5 +1,6 @@
-package com.estudo.demo.DTOs;
+package com.estudo.demo.DTOs.requestDTO;
 
+import com.estudo.demo.DTOs.ItensVendasDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

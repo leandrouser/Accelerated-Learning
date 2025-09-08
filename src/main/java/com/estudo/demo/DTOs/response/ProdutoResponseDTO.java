@@ -1,4 +1,4 @@
-package com.estudo.demo.DTOs;
+package com.estudo.demo.DTOs.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,13 +1,13 @@
 package com.estudo.demo.controle;
 
-import com.estudo.demo.DTOs.VendaRequestDTO;
-import com.estudo.demo.DTOs.VendaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.VendaRequestDTO;
+import com.estudo.demo.DTOs.response.VendaResponseDTO;
 import com.estudo.demo.Servico.VendaServico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/vendas")
+@RequestMapping("/api/vendas")
 public class VendaControle {
 
     private final VendaServico vendaServico;

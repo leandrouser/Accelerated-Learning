@@ -1,7 +1,7 @@
 package com.estudo.demo.controle;
 
-import com.estudo.demo.DTOs.PessoaRequestDTO;
-import com.estudo.demo.DTOs.PessoaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.PessoaRequestDTO;
+import com.estudo.demo.DTOs.response.PessoaResponseDTO;
 import com.estudo.demo.Servico.PessoaServico;
 import com.estudo.demo.repositorio.PessoaRepositorio;
 import jakarta.validation.Valid;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("pessoas")
+@RequestMapping("/api/pessoas")
 public class PessoaControle {
 
     private final PessoaServico pessoaServico;

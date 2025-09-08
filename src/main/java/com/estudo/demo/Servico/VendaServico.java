@@ -2,8 +2,8 @@ package com.estudo.demo.Servico;
 
 import com.estudo.demo.DTOs.ClienteDTO;
 import com.estudo.demo.DTOs.ItensVendasDTO;
-import com.estudo.demo.DTOs.VendaRequestDTO;
-import com.estudo.demo.DTOs.VendaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.VendaRequestDTO;
+import com.estudo.demo.DTOs.response.VendaResponseDTO;
 import com.estudo.demo.model.ItensVendas;
 import com.estudo.demo.model.Pessoas;
 import com.estudo.demo.model.Produtos;

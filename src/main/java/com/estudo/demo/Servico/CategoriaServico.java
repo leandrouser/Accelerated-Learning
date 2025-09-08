@@ -1,7 +1,7 @@
 package com.estudo.demo.Servico;
 
-import com.estudo.demo.DTOs.CategoriaRequestDTO;
-import com.estudo.demo.DTOs.CategoriaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.CategoriaRequestDTO;
+import com.estudo.demo.DTOs.response.CategoriaResponseDTO;
 import com.estudo.demo.model.Categorias;
 import com.estudo.demo.repositorio.CategoriaRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,7 @@
 package com.estudo.demo.Servico;
 
-import com.estudo.demo.DTOs.PessoaRequestDTO;
-import com.estudo.demo.DTOs.PessoaResponseDTO;
+import com.estudo.demo.DTOs.requestDTO.PessoaRequestDTO;
+import com.estudo.demo.DTOs.response.PessoaResponseDTO;
 import com.estudo.demo.enums.TipoPessoa;
 import com.estudo.demo.model.Pessoas;
 import com.estudo.demo.repositorio.PessoaRepositorio;
