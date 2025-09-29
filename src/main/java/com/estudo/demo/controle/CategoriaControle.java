@@ -6,6 +6,8 @@ import com.estudo.demo.Servico.CategoriaServico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/categorias")
 public class CategoriaControle {
@@ -15,6 +17,7 @@ public class CategoriaControle {
     public CategoriaControle(CategoriaServico categoriaServico) {
         this.categoriaServico = categoriaServico;
     }
+
     @PostMapping
     public ResponseEntity<CategoriaResponseDTO> criarCategoria(@RequestBody CategoriaRequestDTO requestDTO) {
         CategoriaResponseDTO categoriaResponseDTO = categoriaServico.criarCategoria(requestDTO);
@@ -27,4 +30,11 @@ public class CategoriaControle {
         CategoriaResponseDTO categoriaResponseDTO = categoriaServico.buscarPorId(id);
         return ResponseEntity.ok(categoriaResponseDTO);
     }
+
+    @GetMapping
+    public ResponseEntity<List<CategoriaResponseDTO>> listarTodasCategorias() {
+        List<CategoriaResponseDTO> listaDeCategorias = categoriaServico.listarTodas();
+        return ResponseEntity.ok(listaDeCategorias);
+    }
+
 }

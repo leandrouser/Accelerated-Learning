@@ -3,19 +3,28 @@ package com.estudo.demo.controle;
 import com.estudo.demo.DTOs.requestDTO.ProdutoRequestDTO;
 import com.estudo.demo.DTOs.response.ProdutoResponseDTO;
 import com.estudo.demo.Servico.ProdutoServico;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/produtos")
 public class ProdutoControle {
 
     private final ProdutoServico produtoServico;
+    private final PagedResourcesAssembler<ProdutoResponseDTO> pagedResourcesAssembler;
 
-    public ProdutoControle(ProdutoServico produtoServico) {
+    @Autowired
+    public ProdutoControle(ProdutoServico produtoServico, PagedResourcesAssembler<ProdutoResponseDTO> pagedResourcesAssembler) {
         this.produtoServico = produtoServico;
+        this.pagedResourcesAssembler = pagedResourcesAssembler;
     }
 
     @PostMapping
@@ -33,19 +42,40 @@ public class ProdutoControle {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProdutoResponseDTO>> buscarProdutosPorTermo(
+    public ResponseEntity<PagedModel<EntityModel<ProdutoResponseDTO>>> buscarProdutosPorTermo(
             @RequestParam("term") String term,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        List<ProdutoResponseDTO> produtos = produtoServico.buscarProdutosPorTermo(term, page, size);
-        return ResponseEntity.ok(produtos);
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ProdutoResponseDTO> produtos = produtoServico.buscarProdutosPorTermo(term, page, size);
+        return ResponseEntity.ok(pagedResourcesAssembler.toModel(produtos));
     }
 
     @GetMapping
-    public ResponseEntity<List<ProdutoResponseDTO>> listarProdutos(
+    public ResponseEntity<PagedModel<EntityModel<ProdutoResponseDTO>>> listarProdutos(
+            @RequestParam Optional<Integer> estoque,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        List<ProdutoResponseDTO> produtos = produtoServico.listarTodosProdutos(page, size);
+
+        Page<ProdutoResponseDTO> produtos;
+
+        if (estoque.isPresent()) {
+            produtos = produtoServico.listarProdutosSemEstoque(estoque.get(), page, size);
+        } else {
+            produtos = produtoServico.listarTodosProdutos(page, size);
+        }
+
+        PagedModel<EntityModel<ProdutoResponseDTO>> pagedModel = pagedResourcesAssembler.toModel(produtos);
+        return ResponseEntity.ok(pagedModel);
+    }
+
+
+    @GetMapping("/out-of-stock")
+    public ResponseEntity<Page<ProdutoResponseDTO>> listarProdutosSemEstoque(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<ProdutoResponseDTO> produtos = produtoServico.listarProdutosSemEstoque(0, page, size);
         return ResponseEntity.ok(produtos);
     }
+
 }

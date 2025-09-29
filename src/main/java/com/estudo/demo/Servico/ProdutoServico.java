@@ -11,9 +11,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class ProdutoServico {
 
@@ -26,7 +23,7 @@ public class ProdutoServico {
         this.categoriaRepositorio = categoriaRepositorio;
     }
 
-    public ProdutoResponseDTO criarProduto(ProdutoRequestDTO produtoRequestDTO){
+    public ProdutoResponseDTO criarProduto(ProdutoRequestDTO produtoRequestDTO) {
         Categorias categorias = categoriaRepositorio.findById(produtoRequestDTO.getCategoriaId())
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
 
@@ -40,10 +37,10 @@ public class ProdutoServico {
 
         produtoRepositorio.save(produtos);
 
-        return toDTO(produtos);
+        return converterParaDTO(produtos);
     }
 
-    public ProdutoResponseDTO atualizarProduto(Long id, ProdutoRequestDTO produtoRequestDTO){
+    public ProdutoResponseDTO atualizarProduto(Long id, ProdutoRequestDTO produtoRequestDTO) {
         Produtos produtos = produtoRepositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
 
@@ -55,48 +52,50 @@ public class ProdutoServico {
         produtos.setDescricao(produtoRequestDTO.getDescricao());
         produtos.setEstoque(produtoRequestDTO.getEstoque());
         produtos.setPreco(produtoRequestDTO.getPreco());
-                produtos.setCategorias(categorias);
+        produtos.setCategorias(categorias);
 
         produtoRepositorio.save(produtos);
 
-        return toDTO(produtos);
+        return converterParaDTO(produtos);
     }
 
-    public List<ProdutoResponseDTO> buscarProdutosPorTermo(String termo, int page, int size) {
+    public Page<ProdutoResponseDTO> buscarProdutosPorTermo(String termo, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Produtos> produtos = produtoRepositorio.searchByMultipleFields(termo.toLowerCase(), pageable);
+        Page<Produtos> produtosPage;
 
-        return produtos.getContent().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        try {
+            Long idTermo = Long.parseLong(termo);
+            produtosPage = produtoRepositorio.findByIdOrTextSearch(idTermo, termo, pageable);
+        } catch (NumberFormatException e) {
+            produtosPage = produtoRepositorio.findByTextSearch(termo, pageable);
+        }
+
+        return produtosPage.map(this::converterParaDTO);
     }
 
-    public List<ProdutoResponseDTO> listarTodosProdutos(int page, int size) {
-        return produtoRepositorio.findAll(PageRequest.of(page, size))
-                .stream()
-                .map(produto -> new ProdutoResponseDTO(
-                        produto.getId(),
-                        produto.getCodigoBarras(),
-                        produto.getNome(),
-                        produto.getDescricao(),
-                        produto.getPreco(),
-                        produto.getCategorias().getNome(),
-                        produto.getEstoque()
+    public Page<ProdutoResponseDTO> listarTodosProdutos(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Produtos> produtosPage = produtoRepositorio.findAll(pageable);
 
-                ))
-                .toList();
+        return produtosPage.map(this::converterParaDTO);
     }
 
-    private ProdutoResponseDTO toDTO(Produtos produtos) {
+    public Page<ProdutoResponseDTO> listarProdutosSemEstoque(int estoque, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Produtos> produtosPage = produtoRepositorio.findByEstoque(estoque, pageable);
+
+        return produtosPage.map(this::converterParaDTO);
+    }
+
+    private ProdutoResponseDTO converterParaDTO(Produtos produto) {
         return new ProdutoResponseDTO(
-                produtos.getId(),
-                produtos.getCodigoBarras(),
-                produtos.getNome(),
-                produtos.getDescricao(),
-                produtos.getPreco(),
-                produtos.getCategorias().getNome(),
-                produtos.getEstoque()
-
+                produto.getId(),
+                produto.getCodigoBarras(),
+                produto.getNome(),
+                produto.getDescricao(),
+                produto.getPreco(),
+                produto.getCategorias() != null ? produto.getCategorias().getNome() : null,
+                produto.getEstoque()
         );
     }
 }

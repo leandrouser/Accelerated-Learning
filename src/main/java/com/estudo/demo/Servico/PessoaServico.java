@@ -18,14 +18,25 @@ import java.util.stream.Collectors;
 public class PessoaServico {
 
     private final PessoaRepositorio pessoaRepositorio;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
-    public PessoaServico(PessoaRepositorio pessoaRepositorio) {
+    public PessoaServico(PessoaRepositorio pessoaRepositorio,
+                         BCryptPasswordEncoder passwordEncoder,
+                         AuthService authService) {
         this.pessoaRepositorio = pessoaRepositorio;
+        this.passwordEncoder = passwordEncoder;
+        this.authService = authService;
     }
 
+
     @Transactional
-    public PessoaResponseDTO criarPessoa(PessoaRequestDTO dto) {
+    public PessoaResponseDTO criarPessoa(PessoaRequestDTO dto){
+
+        if (!pessoaRepositorio.existsById(dto.getId())) {
+            throw new IllegalArgumentException("Apenas administradores podem criar outros administradores");
+        }
+
         validarCpfDuplicado(dto.getCpf(), null);
 
         Pessoas pessoas = new Pessoas();
@@ -42,7 +53,7 @@ public class PessoaServico {
             pessoas.setSenha(passwordEncoder.encode(dto.getSenha()));
         }
 
-        pessoas.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : pessoas.isAtivo());
+        pessoas.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
 
         Pessoas salvo = pessoaRepositorio.save(pessoas);
         return toResponseDTO(salvo);
