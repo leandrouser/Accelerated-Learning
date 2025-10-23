@@ -1,6 +1,5 @@
 package com.estudo.demo.DTOs.response;
 
-import com.estudo.demo.enums.TipoPessoa;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,13 +7,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PessoaResponseDTO {
+public class ClienteResponseDTO {
 
     private Long id;
-    private String nome;
+    private String username;
     private String cpf;
     private String telefone;
     private String endereco;
-    private TipoPessoa tipo;
     private boolean ativo;
 }

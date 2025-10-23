@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,25 +18,17 @@ public class PessoaServico {
 
     private final PessoaRepositorio pessoaRepositorio;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final AuthService authService;
 
     public PessoaServico(PessoaRepositorio pessoaRepositorio,
-                         BCryptPasswordEncoder passwordEncoder,
-                         AuthService authService) {
+                         BCryptPasswordEncoder passwordEncoder) {
         this.pessoaRepositorio = pessoaRepositorio;
         this.passwordEncoder = passwordEncoder;
-        this.authService = authService;
     }
 
-
     @Transactional
-    public PessoaResponseDTO criarPessoa(PessoaRequestDTO dto){
-
-        if (!pessoaRepositorio.existsById(dto.getId())) {
-            throw new IllegalArgumentException("Apenas administradores podem criar outros administradores");
-        }
-
+    public PessoaResponseDTO criarPessoa(PessoaRequestDTO dto) {
         validarCpfDuplicado(dto.getCpf(), null);
+        validarSenhaParaTipo(dto.getTipo(), dto.getSenha());
 
         Pessoas pessoas = new Pessoas();
         pessoas.setNome(dto.getNome());
@@ -46,10 +37,7 @@ public class PessoaServico {
         pessoas.setTelefone(dto.getTelefone());
         pessoas.setTipo(dto.getTipo());
 
-        if ((dto.getTipo() == TipoPessoa.USUARIO || dto.getTipo() == TipoPessoa.ADMINISTRADOR)) {
-            if (dto.getSenha() == null) {
-                throw new IllegalArgumentException("Senha obrigatória para USUARIO e ADMINISTRADOR");
-            }
+        if (dto.getSenha() != null) {
             pessoas.setSenha(passwordEncoder.encode(dto.getSenha()));
         }
 
@@ -59,25 +47,26 @@ public class PessoaServico {
         return toResponseDTO(salvo);
     }
 
-    public List<PessoaResponseDTO> findAll(){
+    public List<PessoaResponseDTO> findAll() {
         return pessoaRepositorio.findAll()
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    public PessoaResponseDTO buscarPorId(Long id){
+    public PessoaResponseDTO buscarPorId(Long id) {
         Pessoas pessoas = pessoaRepositorio.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada"));
         return toResponseDTO(pessoas);
     }
 
     @Transactional
-    public PessoaResponseDTO atualizar(Long id, PessoaRequestDTO dto){
+    public PessoaResponseDTO atualizar(Long id, PessoaRequestDTO dto) {
         Pessoas pessoas = pessoaRepositorio.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada"));
 
         validarCpfDuplicado(dto.getCpf(), id);
+        validarAtualizacaoSenha(pessoas, dto);
 
         pessoas.setNome(dto.getNome());
         pessoas.setEndereco(dto.getEndereco());
@@ -86,32 +75,54 @@ public class PessoaServico {
         pessoas.setTipo(dto.getTipo());
         pessoas.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : pessoas.isAtivo());
 
-        if ((dto.getTipo() == TipoPessoa.USUARIO || dto.getTipo() == TipoPessoa.ADMINISTRADOR) && dto.getSenha() != null) {
+        if (dto.getSenha() != null && !dto.getSenha().trim().isEmpty()) {
             pessoas.setSenha(passwordEncoder.encode(dto.getSenha()));
         }
 
         Pessoas atualizado = pessoaRepositorio.save(pessoas);
         return toResponseDTO(atualizado);
-
     }
 
-    private void validarCpfDuplicado(String cpf, Long id){
-        pessoaRepositorio.findByCpf(cpf).ifPresent(c -> {
-            if (id == null || !c.getId().equals(id)){
-                throw new IllegalArgumentException("CPF já cadastrado para outro cliente");
+    private void validarSenhaParaTipo(TipoPessoa tipo, String senha) {
+        if ((tipo == TipoPessoa.USUARIO || tipo == TipoPessoa.ADMINISTRADOR) &&
+                (senha == null || senha.trim().isEmpty())) {
+            throw new IllegalArgumentException("Senha obrigatória para USUARIO e ADMINISTRADOR");
+        }
+    }
+
+    private void validarAtualizacaoSenha(Pessoas pessoaExistente, PessoaRequestDTO dto) {
+        // Se está mudando para um tipo que requer senha e não tem senha atual nem nova
+        if ((dto.getTipo() == TipoPessoa.USUARIO || dto.getTipo() == TipoPessoa.ADMINISTRADOR) &&
+                pessoaExistente.getSenha() == null &&
+                (dto.getSenha() == null || dto.getSenha().trim().isEmpty())) {
+            throw new IllegalArgumentException("Senha obrigatória para USUARIO e ADMINISTRADOR");
+        }
+    }
+
+    private void validarCpfDuplicado(String cpf, Long id) {
+        if (id == null) {
+            // Criando nova pessoa
+            if (pessoaRepositorio.findByCpf(cpf).isPresent()) {
+                throw new IllegalArgumentException("CPF já cadastrado");
             }
-        });
-
+        } else {
+            // Atualizando pessoa existente
+            if (pessoaRepositorio.existsByCpfAndIdNot(cpf, id)) {
+                throw new IllegalArgumentException("CPF já cadastrado para outra pessoa");
+            }
+        }
     }
 
-    private PessoaResponseDTO toResponseDTO(Pessoas pessoas){
-        PessoaResponseDTO dto = new PessoaResponseDTO();
-        dto.setNome(pessoas.getNome());
-        dto.setEndereco(pessoas.getEndereco());
-        dto.setCpf(pessoas.getCpf());
-        dto.setTelefone(pessoas.getTelefone());
-        dto.setTipo(pessoas.getTipo());
-        dto.setAtivo(pessoas.isAtivo());
-        return dto;
+    private PessoaResponseDTO toResponseDTO(Pessoas pessoas) {
+        return new PessoaResponseDTO(
+                pessoas.getId(),
+                pessoas.getNome(),
+                pessoas.getCpf(),
+                pessoas.getTelefone(),
+                pessoas.getEndereco(),
+                pessoas.getTipo(),
+                pessoas.isAtivo()
+        );
     }
+
 }

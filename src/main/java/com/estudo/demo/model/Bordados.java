@@ -19,6 +19,7 @@ public class Bordados {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include // Boa prática para @Data + @Entity
     private Long id;
 
     @Column(name = "data_cadastro", nullable = false)
@@ -33,9 +34,10 @@ public class Bordados {
     @Column(name = "descricao")
     private String descricao;
 
-    @ManyToOne
+    // --- CORREÇÃO APLICADA AQUI ---
+    @ManyToOne(fetch = FetchType.LAZY) // Lazy loading é geralmente melhor
     @JoinColumn(name = "cliente_id", nullable = false)
-    private Pessoas cliente;
+    private Cliente cliente; // <-- TIPO CORRIGIDO PARA Cliente
 
     @Lob
     @Column(name = "arquivo")

@@ -6,8 +6,9 @@ import com.estudo.demo.model.Pessoas;
 import com.estudo.demo.repositorio.PessoaRepositorio;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -24,13 +26,32 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final PessoaRepositorio pessoaRepositorio;
-    private final SecretKey jwtSecret;
     private final long jwtExpirationMs = 86400000;
+
+    @Value("${DLARA_JWT_SECRET}")
+    private String jwtSecretString;
+
+    private SecretKey jwtSecret;
 
     public AuthService(AuthenticationManager authenticationManager, PessoaRepositorio pessoaRepositorio) {
         this.authenticationManager = authenticationManager;
         this.pessoaRepositorio = pessoaRepositorio;
-        this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("--- INICIALIZANDO CHAVE SECRETA JWT ---");
+        if (jwtSecretString == null || jwtSecretString.isBlank()) {
+            System.err.println("!!! ERRO CRÍTICO: Variável de ambiente 'DLARA_JWT_SECRET' não encontrada ou está vazia. !!!");
+            System.err.println("!!! A autenticação JWT NÃO irá funcionar. !!!");
+            // Lançar uma exceção aqui é uma boa prática para impedir que a aplicação
+            // inicie em um estado inseguro.
+            throw new IllegalStateException("A variável de ambiente DLARA_JWT_SECRET deve ser configurada.");
+        } else {
+            System.out.println("Variável de ambiente 'DLARA_JWT_SECRET' lida com sucesso.");
+            this.jwtSecret = Keys.hmacShaKeyFor(jwtSecretString.getBytes(StandardCharsets.UTF_8));
+        }
+        System.out.println("------------------------------------");
     }
 
     public boolean isCurrentUserAdmin() {
@@ -46,23 +67,24 @@ public class AuthService {
 
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
         try {
-            // Autentica pelo CPF + senha
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginRequestDTO.getNome(),
+                            loginRequestDTO.getCpf(),
                             loginRequestDTO.getSenha()
                     )
             );
 
-            // Busca a pessoa pelo CPF
-            Pessoas pessoa = pessoaRepositorio.findByNome(loginRequestDTO.getNome())
+            Pessoas pessoa = pessoaRepositorio.findByCpf(loginRequestDTO.getCpf())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-// Passa authentication e cpf
             String token = generateToken(authentication, pessoa.getCpf());
 
+            // Crie o objeto 'response' UMA SÓ VEZ ✅
             LoginResponseDTO response = new LoginResponseDTO();
+
+            // Agora, adicione todas as informações a esse mesmo objeto
             response.setToken(token);
+
             response.setTipo(pessoa.getTipo().name());
             response.setNome(pessoa.getNome());
             response.setCpf(pessoa.getCpf());

@@ -18,13 +18,13 @@ public class Pessoas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 50)
+    @Column(nullable = false, length = 50)
     private String nome;
 
     private String endereco;
 
     @CPF
-    @Column(unique = true, length = 11)
+    @Column(unique = true, nullable = false, length = 11)
     private String cpf;
 
     @Column(length = 11)
@@ -37,6 +37,7 @@ public class Pessoas {
     @Column(nullable = true)
     private String senha;
 
+    @Column(nullable = false)
     private boolean ativo = true;
 
 }

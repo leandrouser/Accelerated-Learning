@@ -1,55 +1,38 @@
 package com.estudo.demo.Servico;
 
-import com.estudo.demo.enums.TipoPessoa;
 import com.estudo.demo.model.Pessoas;
 import com.estudo.demo.repositorio.PessoaRepositorio;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import java.util.Collections;
 
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService { // Implementar a interface
+public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final PessoaRepositorio pessoaRepositorio;
+    @Autowired
+    private PessoaRepositorio pessoaRepositorio;
 
-    public UserDetailsServiceImpl(PessoaRepositorio pessoaRepositorio) {
-        this.pessoaRepositorio = pessoaRepositorio;
-    }
-
+    /**
+     * O Spring Security chama este método.
+     * O parâmetro 'username' aqui será o CPF que o usuário digitou na tela de login.
+     */
     @Override
-    public UserDetails loadUserByUsername(String nome) throws UsernameNotFoundException {
-        Pessoas pessoa = pessoaRepositorio.findByNome(nome)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + nome));
+    public UserDetails loadUserByUsername(String cpf) throws UsernameNotFoundException {
 
-        // Verificar se é cliente (não pode fazer login)
-        if (pessoa.getTipo() == TipoPessoa.CLIENTE) {
-            throw new UsernameNotFoundException("Clientes não podem fazer login");
-        }
+        // 1. Buscamos a pessoa pelo CPF (que é o 'username' do login)
+        Pessoas pessoa = pessoaRepositorio.findByCpf(cpf)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com este CPF: " + cpf));
 
-        // Verificar se usuário está ativo
-        if (!pessoa.isAtivo()) {
-            throw new UsernameNotFoundException("Usuário inativo");
-        }
-
-        // Verificar se tem senha (usuários e administradores devem ter senha)
-        if (pessoa.getSenha() == null || pessoa.getSenha().isEmpty()) {
-            throw new UsernameNotFoundException("Usuário não possui senha configurada");
-        }
-
-        List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + pessoa.getTipo().name())
-        );
-
-        // Usar o User do Spring Security (org.springframework.security.core.userdetails.User)
+        // 2. Criamos o UserDetails do Spring com os dados da NOSSA entidade
         return new User(
-                pessoa.getNome(),
-                pessoa.getSenha(),
-                authorities
+                pessoa.getCpf(),     // O "username" para o Spring (deve ser único)
+                pessoa.getSenha(),   // O campo que guarda a senha (ex: "senha")
+                Collections.singletonList(new SimpleGrantedAuthority(pessoa.getTipo().getRole()))
         );
     }
 }

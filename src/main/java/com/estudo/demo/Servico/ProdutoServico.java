@@ -33,7 +33,7 @@ public class ProdutoServico {
         produtos.setDescricao(produtoRequestDTO.getDescricao());
         produtos.setEstoque(produtoRequestDTO.getEstoque());
         produtos.setPreco(produtoRequestDTO.getPreco());
-        produtos.setCategorias(categorias);
+        produtos.setCategoria(categorias);
 
         produtoRepositorio.save(produtos);
 
@@ -52,7 +52,7 @@ public class ProdutoServico {
         produtos.setDescricao(produtoRequestDTO.getDescricao());
         produtos.setEstoque(produtoRequestDTO.getEstoque());
         produtos.setPreco(produtoRequestDTO.getPreco());
-        produtos.setCategorias(categorias);
+        produtos.setCategoria(categorias);
 
         produtoRepositorio.save(produtos);
 
@@ -82,7 +82,7 @@ public class ProdutoServico {
 
     public Page<ProdutoResponseDTO> listarProdutosSemEstoque(int estoque, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Produtos> produtosPage = produtoRepositorio.findByEstoque(estoque, pageable);
+        Page<Produtos> produtosPage = produtoRepositorio.findByEstoqueLessThanEqualComCategoria(estoque, pageable);
 
         return produtosPage.map(this::converterParaDTO);
     }
@@ -94,7 +94,7 @@ public class ProdutoServico {
                 produto.getNome(),
                 produto.getDescricao(),
                 produto.getPreco(),
-                produto.getCategorias() != null ? produto.getCategorias().getNome() : null,
+                produto.getCategoria() != null ? produto.getCategoria().getNome() : null,
                 produto.getEstoque()
         );
     }

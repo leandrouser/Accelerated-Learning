@@ -17,5 +17,6 @@ public class ProdutoRequestDTO {
     private int estoque;
     private BigDecimal preco;
     private Long categoriaId;
+    private String categoriaNome;
 
 }

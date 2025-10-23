@@ -6,6 +6,8 @@ import com.estudo.demo.Servico.VendaServico;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/vendas")
 public class VendaControle {
@@ -25,6 +27,12 @@ public class VendaControle {
     public ResponseEntity<VendaResponseDTO> buscarVenda(@PathVariable Long id){
         VendaResponseDTO vendaDTO = vendaServico.buscarPorId(id); // chama o serviço
         return ResponseEntity.ok(vendaDTO);
+    }
+
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<VendaResponseDTO>> buscarVendasPorCliente(@PathVariable Long clienteId) {
+        List<VendaResponseDTO> vendas = vendaServico.buscarVendasPorCliente(clienteId);
+        return ResponseEntity.ok(vendas);
     }
 
 }

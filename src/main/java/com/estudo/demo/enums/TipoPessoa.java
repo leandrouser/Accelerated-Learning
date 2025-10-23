@@ -1,7 +1,6 @@
 package com.estudo.demo.enums;
 
 public enum TipoPessoa {
-    CLIENTE("ROLE_CLIENTE"),
     ADMINISTRADOR("ROLE_ADMINISTRADOR"),
     USUARIO("ROLE_USUARIO");
 

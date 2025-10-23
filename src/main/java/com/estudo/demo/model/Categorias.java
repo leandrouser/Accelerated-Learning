@@ -22,6 +22,6 @@ public class Categorias {
     @Column(length = 10)
     private String nome;
 
-    @OneToMany (mappedBy = "categorias",  cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany (mappedBy = "categoria",  cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Produtos> produtos = new ArrayList<>();
 }

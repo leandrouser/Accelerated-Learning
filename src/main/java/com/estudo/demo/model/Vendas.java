@@ -1,5 +1,6 @@
 package com.estudo.demo.model;
 
+import com.estudo.demo.enums.StatusPagamento;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +23,12 @@ public class Vendas {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Pessoas cliente;
+    @JoinColumn(name = "vendedor_id", nullable = false)
+    private Pessoas vendedor;
+
+    @ManyToOne
+    @JoinColumn(name = "cliente_id", nullable = false)
+    private Cliente cliente;
 
     @Column(name = "data_venda", nullable = false)
     private LocalDate dataVenda;
@@ -40,8 +45,9 @@ public class Vendas {
     @Column(name = "valor", precision = 10, scale = 2, nullable = false)
     private BigDecimal valor;
 
+    @Enumerated(EnumType.STRING) // Salva o nome "PENDENTE", "PAGA" no BD
     @Column(nullable = false, length = 10)
-    private String pagamento;
+    private StatusPagamento pagamento;
 
     @Column(nullable = false)
     private int quantidade;

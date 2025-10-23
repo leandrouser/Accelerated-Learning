@@ -3,6 +3,7 @@ package com.estudo.demo.Servico;
 import com.estudo.demo.DTOs.PagamentoDetalhesDTO;
 import com.estudo.demo.DTOs.PagamentoItensDTO;
 import com.estudo.demo.DTOs.ProcessarPagamentoDTO;
+import com.estudo.demo.enums.StatusPagamento;
 import com.estudo.demo.model.ItensVendas;
 import com.estudo.demo.model.Pagamento;
 import com.estudo.demo.model.Vendas;
@@ -37,26 +38,54 @@ public class PagamentoServico {
         Vendas venda = vendaRepositorio.findById(dto.getVendaId())
                 .orElseThrow(() -> new EntityNotFoundException("Venda não encontrada com o código: " + dto.getVendaId()));
 
-        BigDecimal desconto = dto.getDesconto() != null ? dto.getDesconto() : venda.getDescontoTotal();
-        BigDecimal subtotal = venda.getItens().stream()
-                .map(item -> item.getTotal() != null ? item.getTotal() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal valorTotal = subtotal.subtract(desconto);
-
-        if (dto.getValorPago().compareTo(valorTotal) < 0) {
-            throw new IllegalArgumentException("O valor pago não pode ser menor que o valor total da venda: " + valorTotal);
+        // --- Verificação de Status ---
+        // (Recomendação: impedir pagamento duplicado)
+        if (venda.getPagamento() == StatusPagamento.PAGO) { // Comparação direta
+            throw new IllegalStateException("Esta venda já foi paga.");
         }
 
-        BigDecimal troco = dto.getValorPago().subtract(valorTotal);
+        BigDecimal descontoOriginalVenda = venda.getDescontoTotal() != null ? venda.getDescontoTotal() : BigDecimal.ZERO;
+        BigDecimal descontoAdicionalPagamento = dto.getDescontoAdicional() != null ? dto.getDescontoAdicional() : BigDecimal.ZERO;
 
+        // Validação (Opcional): Impedir desconto adicional negativo?
+        if (descontoAdicionalPagamento.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Desconto adicional não pode ser negativo.");
+        }
+
+        // Desconto total efetivo = Desconto já na venda + Desconto extra do pagamento
+        BigDecimal descontoTotalEfetivo = descontoOriginalVenda.add(descontoAdicionalPagamento);
+
+        // --- Cálculos Finais ---
+        BigDecimal subtotal = venda.getSubTotal(); // Usar o subtotal já calculado
+
+        // Valor final a ser pago considera o desconto total efetivo
+        BigDecimal valorTotalFinal = subtotal.subtract(descontoTotalEfetivo);
+
+        // Garante que o valor final não seja negativo
+        if (valorTotalFinal.compareTo(BigDecimal.ZERO) < 0) {
+            valorTotalFinal = BigDecimal.ZERO;
+        }
+
+        // Validação do valor pago contra o valor final com TODOS os descontos
+        if (dto.getValorPago().compareTo(valorTotalFinal) < 0) {
+            throw new IllegalArgumentException("O valor pago (R$" + dto.getValorPago() +
+                    ") é menor que o valor total a pagar com descontos (R$" + valorTotalFinal + ")");
+        }
+
+        BigDecimal troco = dto.getValorPago().subtract(valorTotalFinal);
+
+        // --- Criação do Pagamento ---
         Pagamento pagamento = new Pagamento();
         pagamento.setVendaId(venda.getId());
         pagamento.setClienteId(venda.getCliente().getId());
-        pagamento.setClienteNome(venda.getCliente().getNome());
+        pagamento.setClienteNome(venda.getCliente().getUsername());
         pagamento.setSubTotal(subtotal);
-        pagamento.setDesconto(desconto);
-        pagamento.setValorTotal(valorTotal);
-        pagamento.setValorPago(dto.getValorPago());
+
+        // O Pagamento registra o DESCONTO TOTAL EFETIVO aplicado
+        pagamento.setDesconto(descontoTotalEfetivo);
+
+        pagamento.setValorTotal(valorTotalFinal); // O valor que deveria ter sido pago
+        pagamento.setValorPago(dto.getValorPago()); // O valor realmente pago
         pagamento.setTroco(troco);
         pagamento.setMetodoPagamento(dto.getMetodoPagamento());
         pagamento.setTipoCartao(dto.getTipoCartao());
@@ -64,7 +93,12 @@ public class PagamentoServico {
 
         pagamentoRepositorio.save(pagamento);
 
-        venda.setPagamento("PAGA");
+        // --- Atualização da Venda ---
+        // A Venda reflete o estado FINAL após o pagamento
+        venda.setPagamento(StatusPagamento.PAGO);
+        venda.setDescontoTotal(descontoTotalEfetivo); // Atualiza com o desconto total efetivo
+        venda.setValor(valorTotalFinal); // Atualiza com o valor final pago
+
         vendaRepositorio.save(venda);
 
         return pagamento;

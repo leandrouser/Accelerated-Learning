@@ -1,6 +1,7 @@
 package com.estudo.demo.DTOs.requestDTO;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,18 +14,21 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class BordadoRequestDTO {
 
-    @NotNull
+    // Data de Entrega pode ser opcional? Se sim, remova @NotNull
+    @NotNull(message = "Data de entrega é obrigatória")
     private LocalDate dataEntrega;
 
-    @NotNull
+    @NotNull(message = "Valor é obrigatório")
+    @Positive(message = "Valor deve ser positivo") // Adicione validação
     private BigDecimal valor;
 
     private String descricao;
 
-    @NotNull
+    @NotNull(message = "ID do Cliente é obrigatório")
     private Long cliente_id;
 
-    private byte[] arquivo;
-    private String nomeArquivo;
+    // Estes não devem vir no DTO de requisição, são processados pelo Controller/Service
+    // private byte[] arquivo;
+    // private String nomeArquivo;
 
 }
