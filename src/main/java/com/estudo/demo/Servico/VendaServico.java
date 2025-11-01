@@ -11,6 +11,7 @@ import com.estudo.demo.model.Vendas;
 import com.estudo.demo.repositorio.PessoaRepositorio;
 import com.estudo.demo.repositorio.ProdutoRepositorio;
 import com.estudo.demo.repositorio.VendaRepositorio;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import com.estudo.demo.model.Cliente;
@@ -126,6 +127,13 @@ public class VendaServico {
                 .map(this::mapToDTO)
                 .toList();
     }
+
+    public VendaResponseDTO buscarPorId(Long vendaId) {
+        return vendaRepositorio.findById(vendaId)
+                .map(this::mapToDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Venda não encontrada"));
+    }
+
 
     public List<VendaResponseDTO> buscarVendasPorCliente(Long clienteId) {
         if (!clienteRepositorio.existsById(clienteId)) {

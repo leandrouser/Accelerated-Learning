@@ -2,14 +2,11 @@ package com.estudo.demo.Servico;
 
 import com.estudo.demo.DTOs.requestDTO.BordadoRequestDTO;
 import com.estudo.demo.DTOs.response.BordadoResponseDTO;
-// Removido: import com.estudo.demo.enums.TipoPessoa;
 import com.estudo.demo.model.Bordados;
-import com.estudo.demo.model.Cliente; // Importe Cliente
-// Removido: import com.estudo.demo.model.Pessoas;
+import com.estudo.demo.model.Cliente;
 import com.estudo.demo.repositorio.BordadoRepositorio;
-import com.estudo.demo.repositorio.ClienteRepositorio; // Importe ClienteRepositorio
-// Removido: import com.estudo.demo.repositorio.PessoaRepositorio;
-import jakarta.persistence.EntityNotFoundException; // Boa prática usar essa exceção
+import com.estudo.demo.repositorio.ClienteRepositorio;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,22 +21,18 @@ import java.util.stream.Collectors;
 public class BordadoServico {
 
     private final BordadoRepositorio bordadoRepositorio;
-    private final ClienteRepositorio clienteRepositorio; // <-- CORRIGIDO: Injetar ClienteRepositorio
+    private final ClienteRepositorio clienteRepositorio;
 
-    // Construtor Corrigido
     public BordadoServico(BordadoRepositorio bordadoRepositorio, ClienteRepositorio clienteRepositorio) {
         this.bordadoRepositorio = bordadoRepositorio;
-        this.clienteRepositorio = clienteRepositorio; // <-- CORRIGIDO
+        this.clienteRepositorio = clienteRepositorio;
     }
 
     @Transactional
     public BordadoResponseDTO salvarOuAtualizarComArquivo(Long id, BordadoRequestDTO dto, MultipartFile file) {
-        // --- CORRIGIDO: Buscar a entidade Cliente ---
+        // --- Busca cliente ---
         Cliente cliente = clienteRepositorio.findById(dto.getCliente_id())
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + dto.getCliente_id()));
-
-        // --- REMOVIDO: Verificação de tipo desnecessária ---
-        // if (cliente.getTipo() != TipoPessoa.CLIENTE) { ... }
 
         Bordados bordado;
 
@@ -48,31 +41,31 @@ public class BordadoServico {
             bordado = bordadoRepositorio.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Bordado não encontrado com ID: " + id));
         } else {
-            // Criação
+            // Novo registro
             bordado = new Bordados();
             bordado.setDataCadastro(LocalDate.now());
         }
 
-        // --- Atualiza/Define os campos comuns ---
-        bordado.setCliente(cliente); // <-- Associa a entidade Cliente correta
+        // --- Atribuição dos campos básicos ---
+        bordado.setCliente(cliente);
         bordado.setDataEntrega(dto.getDataEntrega());
-        // Boa prática: Validar se valor não é nulo ou negativo no DTO com @NotNull @Positive
         bordado.setValor(dto.getValor() != null ? dto.getValor() : BigDecimal.ZERO);
         bordado.setDescricao(dto.getDescricao());
 
-        // Lógica de arquivo
+        // --- Lógica do arquivo ---
         if (file != null && !file.isEmpty()) {
             try {
-                bordado.setArquivo(file.getBytes());
-                bordado.setNomeArquivo(file.getOriginalFilename());
+                byte[] bytesArquivo = file.getBytes();
+                String nomeArquivo = file.getOriginalFilename();
+
+                bordado.setArquivo(bytesArquivo);
+                bordado.setNomeArquivo(nomeArquivo);
             } catch (IOException e) {
-                // Logar o erro é uma boa prática
-                // logger.error("Erro ao processar upload de arquivo para bordado", e);
-                throw new RuntimeException("Erro ao processar arquivo para bordado", e);
+                throw new RuntimeException("Erro ao processar upload do arquivo do bordado", e);
             }
         }
-        // Considere adicionar lógica para *remover* o arquivo se 'file' for nulo/vazio na atualização
 
+        // --- Persistência ---
         Bordados salvo = bordadoRepositorio.save(bordado);
         return toResponseDTO(salvo);
     }
@@ -90,9 +83,16 @@ public class BordadoServico {
         return toResponseDTO(bordado);
     }
 
-    // --- REMOVIDO: Método 'atualizarComArquivo' redundante ---
-    // O 'salvarOuAtualizarComArquivo' já faz a lógica de atualização quando 'id' não é nulo.
-    // Mantenha apenas um método para simplificar.
+    public byte[] obterArquivo(Long id) {
+        Bordados bordado = bordadoRepositorio.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Bordado não encontrado com ID: " + id));
+
+        if (bordado.getArquivo() == null) {
+            throw new EntityNotFoundException("Este bordado não possui arquivo associado.");
+        }
+
+        return bordado.getArquivo();
+    }
 
     private BordadoResponseDTO toResponseDTO(Bordados bordado) {
         BordadoResponseDTO dto = new BordadoResponseDTO();
@@ -101,13 +101,9 @@ public class BordadoServico {
         dto.setDataEntrega(bordado.getDataEntrega());
         dto.setValor(bordado.getValor());
         dto.setDescricao(bordado.getDescricao());
-        // --- CORRIGIDO: Usar getUsername() da entidade Cliente ---
-        if (bordado.getCliente() != null) {
-            dto.setClienteNome(bordado.getCliente().getUsername());
-        } else {
-            dto.setClienteNome("Cliente não associado"); // Tratamento para caso nulo
-        }
         dto.setNomeArquivo(bordado.getNomeArquivo());
+        dto.setClienteNome(bordado.getCliente() != null ? bordado.getCliente().getUsername() : "Cliente não associado");
+
         return dto;
     }
 }

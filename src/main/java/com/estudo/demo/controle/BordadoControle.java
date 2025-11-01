@@ -6,6 +6,8 @@ import com.estudo.demo.Servico.BordadoServico;
 import com.estudo.demo.model.Bordados;
 import com.estudo.demo.repositorio.BordadoRepositorio;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,11 +80,14 @@ public class BordadoControle {
                 .orElseThrow(() -> new IllegalArgumentException("Bordado não encontrado"));
 
         if (bordado.getArquivo() == null) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
         }
 
         return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"" + bordado.getNomeArquivo() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + bordado.getNomeArquivo() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
                 .body(bordado.getArquivo());
     }
+
 }

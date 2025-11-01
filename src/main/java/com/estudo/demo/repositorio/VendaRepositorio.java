@@ -10,4 +10,5 @@ import java.util.List;
 public interface VendaRepositorio extends JpaRepository<Vendas, Long> {
 
     List<Vendas> findByClienteId(Long clienteId);
+    List<Vendas> findByVendedorId(Long vendedorId);
 }
