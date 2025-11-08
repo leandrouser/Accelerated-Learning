@@ -1,11 +1,8 @@
 package com.estudo.demo.DTOs.requestDTO;
 
-import lombok.Data;
+public record LoginRequestDTO (
 
-@Data
-public class LoginRequestDTO {
-
-    private String cpf;
-    private String senha;
-}
+    String cpf,
+    String password
+){}
 

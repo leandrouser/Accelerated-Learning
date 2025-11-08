@@ -1,99 +1,92 @@
 package com.estudo.demo.execoes;
 
-import com.estudo.demo.DTOs.response.ErrorResponseDTO;
-import jakarta.servlet.http.HttpServletRequest;
+import com.estudo.demo.DTOs.ErrorResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFound(EntityNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse("NOT_FOUND", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(IllegalArgumentException ex,
-                                                                           HttpServletRequest request) {
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        ErrorResponse error = new ErrorResponse("BAD_REQUEST", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponseDTO> handleValidationException(MethodArgumentNotValidException ex,
-                                                                      HttpServletRequest request) {
-        String mensagem = ex.getBindingResult().getFieldErrors()
-                .stream()
-                .map(f -> f.getField() + ": " + f.getDefaultMessage())
-                .reduce((f1, f2) -> f1 + "; " + f2)
-                .orElse(ex.getMessage());
-
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                mensagem,
-                request.getRequestURI()
-        );
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception ex,
-                                                                   HttpServletRequest request) {
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-
-
+    // 🔒 Violação de integridade (chave duplicada, campos nulos, etc.)
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponseDTO> handleDataIntegrityViolation(DataIntegrityViolationException ex,
-                                                                         HttpServletRequest request) {
-        String mensagem = "Violação de integridade no banco";
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = "Violação de integridade nos dados.";
+        String detalhes = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
 
-        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
-            String constraint = cve.getConstraintName();
-            if (constraint != null && constraint.contains("nome")) {
-                String valor = ex.getMostSpecificCause().getMessage();
-                int start = valor.indexOf("=(");
-                int end = valor.indexOf(")");
-                if (start != -1 && end != -1 && end > start) {
-                    String valorDuplicado = valor.substring(start + 2, end);
-                    mensagem = "Produto com nome '" + valorDuplicado + "' já existe.";
+        if (detalhes != null) {
+
+            // Duplicidade de registro
+            if (detalhes.contains("duplicar valor da chave") || detalhes.contains("duplicate key")) {
+                message = "Já existe um registro com esses dados.";
+
+                if (detalhes.contains("product_name")) {
+                    int start = detalhes.indexOf('(');
+                    int end = detalhes.indexOf(')', start);
+                    if (start != -1 && end != -1) {
+                        String produtoDuplicado = detalhes.substring(start + 1, end);
+                        message = "O produto " + produtoDuplicado + " já está cadastrado.";
+                    }
                 }
-            } else {
-                mensagem = "Violação de restrição no banco: " + constraint;
+            }
+
+            // Campo obrigatório nulo
+            else if (detalhes.contains("null value") || detalhes.contains("cannot be null")) {
+                String campo = "um campo obrigatório";
+                int start = detalhes.indexOf("\"");
+                int end = detalhes.indexOf("\"", start + 1);
+                if (start != -1 && end != -1) {
+                    campo = detalhes.substring(start + 1, end);
+                }
+                message = "O campo " + campo + " não pode ser nulo.";
             }
         }
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                mensagem,
-                request.getRequestURI()
+        ErrorResponse error = new ErrorResponse("BAD_REQUEST", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // ⚙️ Validação de campos (Bean Validation: @NotNull, @Size, etc.)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Erro de validação");
+
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(err ->
+                fieldErrors.put(err.getField(), err.getDefaultMessage())
         );
 
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        body.put("fields", fieldErrors);
+        return ResponseEntity.badRequest().body(body);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    // 🧩 Fallback genérico
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        ErrorResponse error = new ErrorResponse("INTERNAL_ERROR", "Erro interno do servidor");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-
 }
